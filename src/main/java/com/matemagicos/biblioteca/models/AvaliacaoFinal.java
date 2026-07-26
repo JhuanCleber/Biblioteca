@@ -23,7 +23,8 @@ public class AvaliacaoFinal {
     private String feedbackIa;
     private LocalDateTime dataConclusao;
 
-    public AvaliacaoFinal() {}
+    public AvaliacaoFinal() {
+    }
 
     public Integer getIdAvaliacao() {
         return idAvaliacao;

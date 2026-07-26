@@ -1,0 +1,60 @@
+package com.matemagicos.biblioteca.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.Collections;
+
+/**
+ * Roda em toda requisição, antes de chegar no controller.
+ * Se vier um header "Authorization: Bearer <token>" válido, autentica o usuário
+ * no contexto do Spring Security. Se não vier (ou o token for inválido),
+ * simplesmente
+ * segue o fluxo sem autenticar — quem decide se bloqueia ou não é o
+ * SecurityConfig.
+ */
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+
+    public JwtAuthenticationFilter(JwtService jwtService) {
+        this.jwtService = jwtService;
+    }
+
+    @Override
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = authHeader.substring(7); // remove o prefixo "Bearer "
+
+        if (jwtService.tokenValido(token)) {
+            String email = jwtService.extrairEmail(token);
+            Integer idUsuario = jwtService.extrairIdUsuario(token);
+
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    email, null, Collections.emptyList());
+            authentication.setDetails(idUsuario);
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        }
+
+        filterChain.doFilter(request, response);
+    }
+}

@@ -1,22 +1,43 @@
 package com.matemagicos.biblioteca.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "usuario")
+@Table(name = "usuario", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_usuario_email", columnNames = "email")
+})
 public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_usuario")
     private Integer idUsuario;
 
-    private String username;
-    private String senha;
-    private Integer nivelEscolar;
-    private Integer totalPontos;
-    private Integer moedasMagicas;
+    @Column(nullable = false, length = 100)
+    private String nome;
 
-    public Usuario() {}
+    @Column(nullable = false, length = 150)
+    private String email;
+
+    @JsonIgnore
+    @Column(nullable = false, length = 255)
+    private String senha;
+
+    @Column(nullable = false)
+    private Integer idade;
+
+    @Column(name = "nivel_escolar")
+    private Integer nivelEscolar;
+
+    @Column(name = "total_pontos")
+    private Integer totalPontos = 0;
+
+    @Column(name = "moedas_magicas")
+    private Integer moedasMagicas = 0;
+
+    public Usuario() {
+    }
 
     public Integer getIdUsuario() {
         return idUsuario;
@@ -26,12 +47,20 @@ public class Usuario {
         this.idUsuario = idUsuario;
     }
 
-    public String getUsername() {
-        return username;
+    public String getNome() {
+        return nome;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getSenha() {
@@ -40,6 +69,14 @@ public class Usuario {
 
     public void setSenha(String senha) {
         this.senha = senha;
+    }
+
+    public Integer getIdade() {
+        return idade;
+    }
+
+    public void setIdade(Integer idade) {
+        this.idade = idade;
     }
 
     public Integer getNivelEscolar() {

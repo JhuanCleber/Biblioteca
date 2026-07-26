@@ -19,7 +19,8 @@ public class PontuacaoHistorico {
     private String origem;
     private LocalDateTime dataGanho;
 
-    public PontuacaoHistorico() {}
+    public PontuacaoHistorico() {
+    }
 
     public Integer getIdPonto() {
         return idPonto;

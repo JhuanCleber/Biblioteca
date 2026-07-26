@@ -14,7 +14,8 @@ public class Administrador {
     private String email;
     private String senha;
 
-    public Administrador() {}
+    public Administrador() {
+    }
 
     public Integer getIdAdministrador() {
         return idAdministrador;

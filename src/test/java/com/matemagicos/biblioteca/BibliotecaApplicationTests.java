@@ -1,4 +1,4 @@
-package com.example.biblioteca;
+package com.matemagicos.biblioteca;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -23,7 +23,8 @@ public class DesempenhoJogo {
     private Integer tempoGasto;
     private LocalDateTime dataHora;
 
-    public DesempenhoJogo() {}
+    public DesempenhoJogo() {
+    }
 
     public Integer getIdDesempenho() {
         return idDesempenho;

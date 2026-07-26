@@ -19,7 +19,8 @@ public class Jogo {
     @JoinColumn(name = "id_administrador")
     private Administrador administrador;
 
-    public Jogo() {}
+    public Jogo() {
+    }
 
     public Integer getIdJogo() {
         return idJogo;

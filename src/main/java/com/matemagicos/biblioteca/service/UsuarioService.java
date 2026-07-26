@@ -25,8 +25,10 @@ public class UsuarioService {
         this.jwtService = jwtService;
     }
 
-    public List<Usuario> listar() {
-        return repository.findAll();
+    public List<UsuarioDTO> listar() {
+        return repository.findAll().stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     public UsuarioDTO cadastrar(CadastroRequestDTO dto) {

@@ -20,18 +20,6 @@ public class UsuarioController {
 
     @GetMapping
     public List<UsuarioDTO> listar() {
-        return service.listar().stream()
-                .map(u -> {
-                    UsuarioDTO dto = new UsuarioDTO();
-                    dto.setId(u.getIdUsuario());
-                    dto.setNome(u.getNome());
-                    dto.setEmail(u.getEmail());
-                    dto.setIdade(u.getIdade());
-                    dto.setNivelEscolar(u.getNivelEscolar());
-                    dto.setTotalPontos(u.getTotalPontos());
-                    dto.setMoedasMagicas(u.getMoedasMagicas());
-                    return dto;
-                })
-                .toList();
+        return service.listar();
     }
 }

@@ -1,5 +1,7 @@
 package com.matemagicos.biblioteca.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,6 +16,8 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
@@ -45,11 +49,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        // O detalhe completo (stack trace, mensagem real) vai só pro log do servidor,
+        // nunca pro cliente — evita vazar informação interna do sistema.
+        log.error("Erro inesperado ao processar requisição", ex);
+
         Map<String, Object> body = new HashMap<>();
         body.put("ok", false);
         body.put("status", 500);
         body.put("erro", "Erro interno no servidor. Tente novamente em instantes.");
-        body.put("detalhe", ex.getMessage());
         body.put("timestamp", LocalDateTime.now().toString());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }

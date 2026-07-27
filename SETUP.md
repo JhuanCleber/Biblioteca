@@ -2,7 +2,7 @@
 # Matemágicos — Setup completo (Banco + Back + Front)
 
 git add .
-git commit -m "back end finalizado"
+git commit -m "Biblioteca"
 git push origin main
 
 Este guia conecta as três pontas: **MySQL**, **Spring Boot** e **React Native (Expo)**.

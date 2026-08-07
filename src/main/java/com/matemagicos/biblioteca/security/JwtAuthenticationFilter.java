@@ -13,14 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
-/**
- * Roda em toda requisição, antes de chegar no controller.
- * Se vier um header "Authorization: Bearer <token>" válido, autentica o usuário
- * no contexto do Spring Security. Se não vier (ou o token for inválido),
- * simplesmente
- * segue o fluxo sem autenticar — quem decide se bloqueia ou não é o
- * SecurityConfig.
- */
+
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -42,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authHeader.substring(7); // remove o prefixo "Bearer "
+        String token = authHeader.substring(7); 
 
         if (jwtService.tokenValido(token)) {
             String email = jwtService.extrairEmail(token);

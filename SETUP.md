@@ -26,7 +26,7 @@ variáveis de ambiente do Windows. Crie estas duas (Painel de Controle >
 Variáveis de Ambiente > Variáveis de usuário > Novo):
 
 | Variável | Valor |
-|---|---|
+| --- | --- |
 | `DB_PASSWORD` | a senha do MySQL **desse** computador (pode ser diferente em cada máquina) |
 | `JWT_SECRET` | uma chave secreta para assinar os tokens (pode reaproveitar a mesma de outro computador, ou gerar uma nova) |
 
@@ -67,7 +67,7 @@ Started MatemagicosApplication in X.XX seconds
 ### Endpoints disponíveis
 
 | Método | URL | Autenticação | Body | Resposta |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | POST | `/auth/cadastro` | Pública | `{ "nome", "idade", "email", "senha" }` | `{ "ok", "mensagem", "usuario" }` ou erro 400 |
 | POST | `/auth/login` | Pública | `{ "email", "senha" }` | `{ "ok", "mensagem", "usuario", "token" }` ou erro 401 |
 | GET | `/usuarios` | **Requer JWT** (`Authorization: Bearer <token>`) | — | `[{ id, nome, email, ... }]` ou 401 sem token válido |

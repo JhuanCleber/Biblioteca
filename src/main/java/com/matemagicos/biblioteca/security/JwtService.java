@@ -19,9 +19,7 @@ public class JwtService {
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
 
-    /**
-     * Gera um token JWT contendo o email (subject) e o id do usuário (claim extra).
-     */
+    
     public String gerarToken(Integer idUsuario, String email) {
         Date agora = new Date();
         Date expiracao = new Date(agora.getTime() + expirationMs);
@@ -43,11 +41,7 @@ public class JwtService {
         return extrairTodasClaims(token).get("idUsuario", Integer.class);
     }
 
-    /**
-     * Retorna true se o token for válido (assinatura correta e não expirado).
-     * Qualquer problema (assinatura inválida, token expirado, formato errado)
-     * cai no catch e o token é tratado como inválido.
-     */
+    
     public boolean tokenValido(String token) {
         try {
             extrairTodasClaims(token);

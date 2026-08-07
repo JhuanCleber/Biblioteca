@@ -49,8 +49,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        // O detalhe completo (stack trace, mensagem real) vai só pro log do servidor,
-        // nunca pro cliente — evita vazar informação interna do sistema.
+        
         log.error("Erro inesperado ao processar requisição", ex);
 
         Map<String, Object> body = new HashMap<>();

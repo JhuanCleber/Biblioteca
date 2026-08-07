@@ -3,7 +3,6 @@ package com.matemagicos.biblioteca.controller;
 import com.matemagicos.biblioteca.DTO.CadastroRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginResponseDTO;
-import com.matemagicos.biblioteca.DTO.UsuarioDTO;
 import com.matemagicos.biblioteca.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,11 +24,12 @@ public class AuthController {
     @PostMapping("/cadastro")
     public ResponseEntity<?> cadastrar(@Valid @RequestBody CadastroRequestDTO dto) {
         try {
-            UsuarioDTO usuario = service.cadastrar(dto);
+            LoginResponseDTO resposta = service.cadastrar(dto);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                     "ok", true,
-                    "mensagem", "Conta criada com sucesso!",
-                    "usuario", usuario));
+                    "mensagem", resposta.getMensagem(),
+                    "usuario", resposta.getUsuario(),
+                    "token", resposta.getToken()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "ok", false,

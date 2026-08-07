@@ -31,7 +31,7 @@ public class UsuarioService {
                 .toList();
     }
 
-    public UsuarioDTO cadastrar(CadastroRequestDTO dto) {
+    public LoginResponseDTO cadastrar(CadastroRequestDTO dto) {
         String emailNormalizado = dto.getEmail().trim().toLowerCase();
 
         if (repository.existsByEmail(emailNormalizado)) {
@@ -48,7 +48,9 @@ public class UsuarioService {
         u.setMoedasMagicas(0);
 
         Usuario salvo = repository.save(u);
-        return toDTO(salvo);
+        String token = jwtService.gerarToken(salvo.getIdUsuario(), salvo.getEmail());
+
+        return new LoginResponseDTO(toDTO(salvo), "Conta criada com sucesso!", token);
     }
 
     public LoginResponseDTO login(LoginRequestDTO dto) {

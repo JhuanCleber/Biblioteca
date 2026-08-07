@@ -35,14 +35,13 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Login e cadastro precisam ser públicos (é como o usuário entra no sistema)
+                        
                         .requestMatchers("/auth/**").permitAll()
-                        // Health check público é útil para monitoramento, sem expor dados
+                        
                         .requestMatchers("/actuator/health").permitAll()
-                        // Todo o resto exige um token JWT válido (ex: /usuarios)
+                        
                         .anyRequest().authenticated())
-                // O filtro JWT roda antes do filtro padrão do Spring Security,
-                // pra já chegar autenticado (ou não) quando a regra acima for avaliada.
+                
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -50,8 +49,7 @@ public class SecurityConfig {
 
     private UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Liberado para o app mobile. Se for usar web depois, troque pelos origins
-        // específicos.
+        
         config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));

@@ -25,9 +25,7 @@ public class RankingController {
     Integer idUsuario = (Integer) authentication.getDetails();
     RankingResponseDTO resposta = service.obterRanking(idUsuario);
 
-    // HashMap (não Map.of) porque "suaPosicao" pode ser null — quando o
-    // usuário logado já está dentro do "top", o front não precisa
-    // mostrar um card separado repetindo a mesma informação.
+    
     Map<String, Object> body = new HashMap<>();
     body.put("ok", true);
     body.put("top", resposta.getTop());

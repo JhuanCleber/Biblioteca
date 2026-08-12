@@ -12,7 +12,7 @@ import java.util.List;
 @Service
 public class RankingService {
 
-  // Quantos jogadores aparecem na lista principal do ranking.
+  
   private static final int TAMANHO_TOP = 20;
 
   private final UsuarioRepository usuarioRepository;
@@ -49,8 +49,7 @@ public class RankingService {
     return new RankingResponseDTO(top, suaPosicao);
   }
 
-  // Mostra só o primeiro nome no ranking — não expõe o nome completo nem o
-  // email de outras crianças pra quem está vendo a lista.
+  
   private String primeiroNome(String nomeCompleto) {
     if (nomeCompleto == null || nomeCompleto.isBlank()) {
       return "Jogador(a)";

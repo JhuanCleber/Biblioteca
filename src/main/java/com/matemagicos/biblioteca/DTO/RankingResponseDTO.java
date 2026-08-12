@@ -5,8 +5,7 @@ import java.util.List;
 public class RankingResponseDTO {
 
   private List<RankingItemDTO> top;
-  // Preenchido só quando o usuário logado NÃO está dentro do "top" acima —
-  // assim o front sempre consegue mostrar "sua posição", mesmo fora do topo.
+  
   private RankingItemDTO suaPosicao;
 
   public RankingResponseDTO() {

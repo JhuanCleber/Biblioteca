@@ -11,6 +11,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
 
     boolean existsByEmail(String email);
 
-    // Usado pelo ranking: todos os usuários, do maior pontuador pro menor.
+    
     List<Usuario> findAllByOrderByTotalPontosDesc();
 }

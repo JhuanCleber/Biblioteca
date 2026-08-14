@@ -1,8 +1,11 @@
 package com.matemagicos.biblioteca.controller;
 
 import com.matemagicos.biblioteca.DTO.CadastroRequestDTO;
+import com.matemagicos.biblioteca.DTO.EsqueciSenhaRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginResponseDTO;
+import com.matemagicos.biblioteca.DTO.RedefinirSenhaRequestDTO;
+import com.matemagicos.biblioteca.DTO.RefreshRequestDTO;
 import com.matemagicos.biblioteca.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -29,7 +32,8 @@ public class AuthController {
                     "ok", true,
                     "mensagem", resposta.getMensagem(),
                     "usuario", resposta.getUsuario(),
-                    "token", resposta.getToken()));
+                    "token", resposta.getToken(),
+                    "refreshToken", resposta.getRefreshToken()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "ok", false,
@@ -45,9 +49,60 @@ public class AuthController {
                     "ok", true,
                     "mensagem", resposta.getMensagem(),
                     "usuario", resposta.getUsuario(),
-                    "token", resposta.getToken()));
+                    "token", resposta.getToken(),
+                    "refreshToken", resposta.getRefreshToken()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "ok", false,
+                    "erro", e.getMessage()));
+        }
+    }
+
+    // Chamado automaticamente pelo app quando o access token expira.
+    // Devolve um access token novo + um refresh token novo (rotacionado).
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequestDTO dto) {
+        try {
+            Map<String, String> tokens = service.renovarToken(dto.getRefreshToken());
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "token", tokens.get("token"),
+                    "refreshToken", tokens.get("refreshToken")));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "ok", false,
+                    "erro", e.getMessage()));
+        }
+    }
+
+    // Revoga o refresh token no banco — logout de verdade, não só limpar o app
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@Valid @RequestBody RefreshRequestDTO dto) {
+        service.logout(dto.getRefreshToken());
+        return ResponseEntity.ok(Map.of(
+                "ok", true,
+                "mensagem", "Logout realizado com sucesso."));
+    }
+
+    // Sempre responde "ok" independente do email existir ou não — evita que alguém
+    // descubra quais emails estão cadastrados só testando essa rota
+    @PostMapping("/esqueci-senha")
+    public ResponseEntity<?> esqueciSenha(@Valid @RequestBody EsqueciSenhaRequestDTO dto) {
+        service.esqueciSenha(dto.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "ok", true,
+                "mensagem", "Se esse email estiver cadastrado, você vai receber um código em instantes."));
+    }
+
+    @PostMapping("/redefinir-senha")
+    public ResponseEntity<?> redefinirSenha(@Valid @RequestBody RedefinirSenhaRequestDTO dto) {
+        try {
+            service.redefinirSenha(dto);
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "mensagem", "Senha redefinida com sucesso! Faça login com a senha nova."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "ok", false,
                     "erro", e.getMessage()));
         }

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS usuario (
     nivel_escolar   INT             NULL,
     total_pontos    INT             NULL DEFAULT 0,
     moedas_magicas  INT             NULL DEFAULT 0,
+    email_verificado BOOLEAN        NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id_usuario),
     UNIQUE KEY uk_usuario_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -110,3 +111,59 @@ CREATE TABLE IF NOT EXISTS pontuacao_historico (
         FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
+-- Tabela: refresh_tokens
+-- Sessões de longa duração (renovação automática de login). Cada linha é um
+-- refresh token emitido pro usuário; "revogado" vira TRUE no logout ou quando
+-- o token é rotacionado (trocado por um novo, a cada uso, por segurança).
+-- Adicionada junto da funcionalidade de refresh token (login não expira mais em 24h).
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id_refresh_token  BIGINT        NOT NULL AUTO_INCREMENT,
+    token             VARCHAR(512)  NOT NULL,
+    id_usuario        INT           NOT NULL,
+    data_expiracao    DATETIME(6)   NOT NULL,
+    revogado          BOOLEAN       NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id_refresh_token),
+    UNIQUE KEY uk_refresh_token (token),
+    KEY idx_refresh_token_usuario (id_usuario),
+    CONSTRAINT fk_refresh_token_usuario
+        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- Tabela: password_reset_tokens
+-- Códigos de 6 dígitos enviados por email pra recuperação de senha.
+-- Curta duração (15min, ver password-reset.expiration-ms) e uso único ("usado").
+-- Adicionada junto da funcionalidade de "esqueci minha senha".
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id_token          BIGINT        NOT NULL AUTO_INCREMENT,
+    codigo            VARCHAR(6)    NOT NULL,
+    id_usuario        INT           NOT NULL,
+    data_expiracao    DATETIME(6)   NOT NULL,
+    usado             BOOLEAN       NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id_token),
+    KEY idx_password_reset_usuario (id_usuario),
+    CONSTRAINT fk_password_reset_usuario
+        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- Tabela: email_verification_tokens
+-- Códigos de 6 dígitos enviados por email pra confirmar o email no cadastro.
+-- Mesma lógica do password_reset_tokens, mas com validade mais longa (24h, ver
+-- email-verification.expiration-ms) — não é urgente como recuperação de senha.
+-- Adicionada junto da funcionalidade de verificação de email no cadastro.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id_token          BIGINT        NOT NULL AUTO_INCREMENT,
+    codigo            VARCHAR(6)    NOT NULL,
+    id_usuario        INT           NOT NULL,
+    data_expiracao    DATETIME(6)   NOT NULL,
+    usado             BOOLEAN       NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (id_token),
+    KEY idx_email_verification_usuario (id_usuario),
+    CONSTRAINT fk_email_verification_usuario
+        FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

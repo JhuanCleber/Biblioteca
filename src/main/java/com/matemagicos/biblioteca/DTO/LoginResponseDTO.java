@@ -4,14 +4,16 @@ public class LoginResponseDTO {
     private UsuarioDTO usuario;
     private String mensagem;
     private String token;
+    private String refreshToken;
 
     public LoginResponseDTO() {
     }
 
-    public LoginResponseDTO(UsuarioDTO usuario, String mensagem, String token) {
+    public LoginResponseDTO(UsuarioDTO usuario, String mensagem, String token, String refreshToken) {
         this.usuario = usuario;
         this.mensagem = mensagem;
         this.token = token;
+        this.refreshToken = refreshToken;
     }
 
     public UsuarioDTO getUsuario() {
@@ -36,5 +38,13 @@ public class LoginResponseDTO {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }

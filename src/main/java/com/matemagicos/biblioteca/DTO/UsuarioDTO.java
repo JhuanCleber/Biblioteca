@@ -8,6 +8,7 @@ public class UsuarioDTO {
     private Integer nivelEscolar;
     private Integer totalPontos;
     private Integer moedasMagicas;
+    private Boolean emailVerificado;
 
     public UsuarioDTO() {
     }
@@ -66,5 +67,13 @@ public class UsuarioDTO {
 
     public void setMoedasMagicas(Integer moedasMagicas) {
         this.moedasMagicas = moedasMagicas;
+    }
+
+    public Boolean getEmailVerificado() {
+        return emailVerificado;
+    }
+
+    public void setEmailVerificado(Boolean emailVerificado) {
+        this.emailVerificado = emailVerificado;
     }
 }

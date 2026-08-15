@@ -19,7 +19,6 @@ public class JwtService {
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
 
-    
     public String gerarToken(Integer idUsuario, String email) {
         Date agora = new Date();
         Date expiracao = new Date(agora.getTime() + expirationMs);
@@ -41,7 +40,6 @@ public class JwtService {
         return extrairTodasClaims(token).get("idUsuario", Integer.class);
     }
 
-    
     public boolean tokenValido(String token) {
         try {
             extrairTodasClaims(token);

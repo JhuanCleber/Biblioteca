@@ -6,6 +6,7 @@ public class CadastroRequestDTO {
 
     @NotBlank(message = "O nome é obrigatório")
     @Size(min = 2, max = 100, message = "O nome deve ter entre 2 e 100 caracteres")
+    @Pattern(regexp = "^[\\p{L} '\\-]+$", message = "Use só letras, espaços, hífen ou apóstrofo no nome")
     private String nome;
 
     @NotBlank(message = "O email é obrigatório")

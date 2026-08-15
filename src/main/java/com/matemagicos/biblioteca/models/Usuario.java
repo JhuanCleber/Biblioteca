@@ -36,6 +36,9 @@ public class Usuario {
     @Column(name = "moedas_magicas")
     private Integer moedasMagicas = 0;
 
+    @Column(name = "email_verificado", nullable = false)
+    private boolean emailVerificado = false;
+
     public Usuario() {
     }
 
@@ -101,5 +104,13 @@ public class Usuario {
 
     public void setMoedasMagicas(Integer moedasMagicas) {
         this.moedasMagicas = moedasMagicas;
+    }
+
+    public boolean isEmailVerificado() {
+        return emailVerificado;
+    }
+
+    public void setEmailVerificado(boolean emailVerificado) {
+        this.emailVerificado = emailVerificado;
     }
 }

@@ -5,6 +5,7 @@ import com.matemagicos.biblioteca.DTO.LoginRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginResponseDTO;
 import com.matemagicos.biblioteca.DTO.RedefinirSenhaRequestDTO;
 import com.matemagicos.biblioteca.DTO.UsuarioDTO;
+import com.matemagicos.biblioteca.models.EmailVerificationToken;
 import com.matemagicos.biblioteca.models.PasswordResetToken;
 import com.matemagicos.biblioteca.models.RefreshToken;
 import com.matemagicos.biblioteca.models.Usuario;
@@ -25,17 +26,22 @@ public class UsuarioService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordResetService passwordResetService;
+    private final EmailVerificationService emailVerificationService;
     private final EmailService emailService;
+    private final FiltroDeNomeService filtroDeNomeService;
 
     public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder, JwtService jwtService,
             RefreshTokenService refreshTokenService, PasswordResetService passwordResetService,
-            EmailService emailService) {
+            EmailVerificationService emailVerificationService, EmailService emailService,
+            FiltroDeNomeService filtroDeNomeService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.passwordResetService = passwordResetService;
+        this.emailVerificationService = emailVerificationService;
         this.emailService = emailService;
+        this.filtroDeNomeService = filtroDeNomeService;
     }
 
     public List<UsuarioDTO> listar() {
@@ -51,20 +57,42 @@ public class UsuarioService {
             throw new IllegalArgumentException("Este email já está cadastrado. Tente fazer login.");
         }
 
+        // " Ana Maria " -> "Ana Maria" (o @Pattern do DTO já barrou
+        // número/símbolo/emoji)
+        String nomeNormalizado = dto.getNome().trim().replaceAll("\\s+", " ");
+
+        if (filtroDeNomeService.contemPalavraProibida(nomeNormalizado)) {
+            throw new IllegalArgumentException("Esse nome não pode ser usado. Escolha outro, por favor.");
+        }
+
         Usuario u = new Usuario();
-        u.setNome(dto.getNome().trim());
+        u.setNome(nomeNormalizado);
         u.setEmail(emailNormalizado);
         u.setSenha(passwordEncoder.encode(dto.getSenha()));
         u.setIdade(dto.getIdade());
         u.setNivelEscolar(dto.getNivelEscolar());
         u.setTotalPontos(0);
         u.setMoedasMagicas(0);
+        u.setEmailVerificado(false);
 
         Usuario salvo = repository.save(u);
         String token = jwtService.gerarToken(salvo.getIdUsuario(), salvo.getEmail());
         String refreshToken = refreshTokenService.gerar(salvo.getIdUsuario());
 
+        enviarEmailVerificacaoSemQuebrarCadastro(salvo);
+
         return new LoginResponseDTO(toDTO(salvo), "Conta criada com sucesso!", token, refreshToken);
+    }
+
+    // Cadastro nunca pode falhar por causa do email de verificação (servidor de
+    // email fora do ar, por exemplo) — o usuário sempre pode pedir reenvio depois
+    private void enviarEmailVerificacaoSemQuebrarCadastro(Usuario u) {
+        try {
+            String codigo = emailVerificationService.gerarCodigo(u.getIdUsuario());
+            emailService.enviarCodigoVerificacao(u.getEmail(), u.getNome(), codigo);
+        } catch (Exception e) {
+            System.err.println("Não foi possível enviar o email de verificação: " + e.getMessage());
+        }
     }
 
     public LoginResponseDTO login(LoginRequestDTO dto) {
@@ -133,6 +161,33 @@ public class UsuarioService {
         refreshTokenService.revogarTodosDoUsuario(u.getIdUsuario());
     }
 
+    // Reenvia o código de verificação. Não faz nada (silenciosamente) se o email
+    // não
+    // existir ou já estiver verificado — mesmo princípio de não vazar informação.
+    public void reenviarVerificacao(String email) {
+        String emailNormalizado = email.trim().toLowerCase();
+        repository.findByEmail(emailNormalizado).ifPresent(u -> {
+            if (u.isEmailVerificado()) {
+                return;
+            }
+            String codigo = emailVerificationService.gerarCodigo(u.getIdUsuario());
+            emailService.enviarCodigoVerificacao(u.getEmail(), u.getNome(), codigo);
+        });
+    }
+
+    public void verificarEmail(String email, String codigo) {
+        String emailNormalizado = email.trim().toLowerCase();
+        Usuario u = repository.findByEmail(emailNormalizado)
+                .orElseThrow(() -> new IllegalArgumentException("Código inválido ou expirado."));
+
+        EmailVerificationToken tokenValido = emailVerificationService.validarCodigo(u.getIdUsuario(), codigo.trim());
+
+        u.setEmailVerificado(true);
+        repository.save(u);
+
+        emailVerificationService.marcarComoUsado(tokenValido);
+    }
+
     private UsuarioDTO toDTO(Usuario u) {
         UsuarioDTO dto = new UsuarioDTO();
         dto.setId(u.getIdUsuario());
@@ -142,6 +197,7 @@ public class UsuarioService {
         dto.setNivelEscolar(u.getNivelEscolar());
         dto.setTotalPontos(u.getTotalPontos());
         dto.setMoedasMagicas(u.getMoedasMagicas());
+        dto.setEmailVerificado(u.isEmailVerificado());
         return dto;
     }
 }

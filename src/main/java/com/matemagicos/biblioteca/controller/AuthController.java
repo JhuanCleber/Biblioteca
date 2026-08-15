@@ -6,6 +6,7 @@ import com.matemagicos.biblioteca.DTO.LoginRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginResponseDTO;
 import com.matemagicos.biblioteca.DTO.RedefinirSenhaRequestDTO;
 import com.matemagicos.biblioteca.DTO.RefreshRequestDTO;
+import com.matemagicos.biblioteca.DTO.VerificarEmailRequestDTO;
 import com.matemagicos.biblioteca.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -101,6 +102,31 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                     "ok", true,
                     "mensagem", "Senha redefinida com sucesso! Faça login com a senha nova."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "ok", false,
+                    "erro", e.getMessage()));
+        }
+    }
+
+    // Mesmo formato de corpo do "esqueci-senha" (só email), por isso reaproveita o
+    // DTO
+    @PostMapping("/reenviar-verificacao")
+    public ResponseEntity<?> reenviarVerificacao(@Valid @RequestBody EsqueciSenhaRequestDTO dto) {
+        service.reenviarVerificacao(dto.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "ok", true,
+                "mensagem",
+                "Se esse email estiver cadastrado e ainda não verificado, você vai receber um novo código."));
+    }
+
+    @PostMapping("/verificar-email")
+    public ResponseEntity<?> verificarEmail(@Valid @RequestBody VerificarEmailRequestDTO dto) {
+        try {
+            service.verificarEmail(dto.getEmail(), dto.getCodigo());
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "mensagem", "Email verificado com sucesso!"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "ok", false,

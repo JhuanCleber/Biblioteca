@@ -1,6 +1,7 @@
 package com.matemagicos.biblioteca.service;
 
 import com.matemagicos.biblioteca.DTO.CadastroRequestDTO;
+import com.matemagicos.biblioteca.DTO.EditarPerfilRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginRequestDTO;
 import com.matemagicos.biblioteca.DTO.LoginResponseDTO;
 import com.matemagicos.biblioteca.DTO.RedefinirSenhaRequestDTO;
@@ -186,6 +187,27 @@ public class UsuarioService {
         repository.save(u);
 
         emailVerificationService.marcarComoUsado(tokenValido);
+    }
+
+    // Mesma validação de nome do cadastro (caracteres via @Pattern no DTO +
+    // palavras
+    // impróprias via FiltroDeNomeService) — nome aparece no ranking, então precisa
+    // continuar passando pelo mesmo filtro mesmo depois de editado
+    public UsuarioDTO editarPerfil(Integer idUsuario, EditarPerfilRequestDTO dto) {
+        Usuario u = repository.findById(idUsuario)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+
+        String nomeNormalizado = dto.getNome().trim().replaceAll("\\s+", " ");
+
+        if (filtroDeNomeService.contemPalavraProibida(nomeNormalizado)) {
+            throw new IllegalArgumentException("Esse nome não pode ser usado. Escolha outro, por favor.");
+        }
+
+        u.setNome(nomeNormalizado);
+        u.setIdade(dto.getIdade());
+        Usuario salvo = repository.save(u);
+
+        return toDTO(salvo);
     }
 
     private UsuarioDTO toDTO(Usuario u) {

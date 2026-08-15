@@ -1,7 +1,8 @@
 package com.matemagicos.biblioteca.repository;
 
-import com.matemagicos.biblioteca.models.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.matemagicos.biblioteca.models.RefreshToken;
 
 import java.util.List;
 import java.util.Optional;

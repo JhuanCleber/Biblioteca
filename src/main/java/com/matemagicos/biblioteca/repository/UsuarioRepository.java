@@ -1,7 +1,8 @@
 package com.matemagicos.biblioteca.repository;
 
-import com.matemagicos.biblioteca.models.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.matemagicos.biblioteca.models.Usuario;
 
 import java.util.List;
 import java.util.Optional;

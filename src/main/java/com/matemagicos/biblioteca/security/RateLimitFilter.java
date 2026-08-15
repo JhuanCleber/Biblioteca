@@ -11,31 +11,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Limita quantas vezes cada IP pode bater numa rota sensível dentro de uma
- * janela
- * de tempo — protege contra spam de cadastro, força bruta de login, e spam de
- * emails (esqueci-senha, verificação). Implementação simples de "janela fixa"
- * em
- * memória: reseta quando o app reinicia e não é compartilhada entre instâncias
- * (não é um problema aqui — o back roda numa instância só).
- *
- * Cada rota tem seu próprio limite, pensado pro caso de uso dela:
- * - login/cadastro: apertado, pra dificultar força bruta e spam de contas
- * - esqueci-senha/reenviar-verificação: apertado, porque cada tentativa manda
- * um email de verdade
- * - refresh/logout: mais folgado, porque são chamados automaticamente pelo app
- * com frequência normal
- */
 public class RateLimitFilter extends OncePerRequestFilter {
 
   private static class Limite {
     final int maxTentativas;
     final long janelaMs;
+    final boolean contarSoFalhas;
 
-    Limite(int maxTentativas, long janelaMs) {
+    Limite(int maxTentativas, long janelaMs, boolean contarSoFalhas) {
       this.maxTentativas = maxTentativas;
       this.janelaMs = janelaMs;
+      this.contarSoFalhas = contarSoFalhas;
     }
   }
 
@@ -48,14 +34,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private final Map<String, Contador> contadores = new ConcurrentHashMap<>();
 
   public RateLimitFilter() {
-    limitesPorRota.put("/auth/login", new Limite(5, 60_000)); // 5 por minuto
-    limitesPorRota.put("/auth/cadastro", new Limite(5, 600_000)); // 5 por 10min
-    limitesPorRota.put("/auth/esqueci-senha", new Limite(3, 900_000)); // 3 por 15min
-    limitesPorRota.put("/auth/redefinir-senha", new Limite(5, 900_000)); // 5 por 15min
-    limitesPorRota.put("/auth/reenviar-verificacao", new Limite(3, 900_000)); // 3 por 15min
-    limitesPorRota.put("/auth/verificar-email", new Limite(10, 900_000)); // 10 por 15min (criança pode digitar errado)
-    limitesPorRota.put("/auth/refresh", new Limite(30, 60_000)); // 30 por minuto (uso automático)
-    limitesPorRota.put("/auth/logout", new Limite(30, 60_000)); // 30 por minuto
+    limitesPorRota.put("/auth/login", new Limite(8, 60_000, true)); // 8 erradas por minuto
+    limitesPorRota.put("/auth/cadastro", new Limite(5, 600_000, false)); // 5 por 10min
+    limitesPorRota.put("/auth/esqueci-senha", new Limite(3, 900_000, false)); // 3 por 15min
+    limitesPorRota.put("/auth/redefinir-senha", new Limite(8, 900_000, true)); // 8 erradas por 15min
+    limitesPorRota.put("/auth/reenviar-verificacao", new Limite(3, 900_000, false)); // 3 por 15min
+    limitesPorRota.put("/auth/verificar-email", new Limite(10, 900_000, true)); // 10 erradas por 15min
+    limitesPorRota.put("/auth/refresh", new Limite(30, 60_000, false)); // 30 por minuto (uso automático)
+    limitesPorRota.put("/auth/logout", new Limite(30, 60_000, false)); // 30 por minuto
   }
 
   @Override
@@ -72,18 +58,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
     String chave = obterIp(request) + ":" + request.getRequestURI();
     Contador contador = contadores.computeIfAbsent(chave, k -> new Contador());
 
-    boolean bloqueado;
+    boolean bloqueadoAntes;
     synchronized (contador) {
       long agora = System.currentTimeMillis();
       if (agora - contador.inicioJanela > limite.janelaMs) {
         contador.inicioJanela = agora;
         contador.tentativas = 0;
       }
-      contador.tentativas++;
-      bloqueado = contador.tentativas > limite.maxTentativas;
+      bloqueadoAntes = contador.tentativas >= limite.maxTentativas;
     }
 
-    if (bloqueado) {
+    if (bloqueadoAntes) {
       response.setStatus(429);
       response.setContentType("application/json");
       response.setCharacterEncoding("UTF-8");
@@ -93,6 +78,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     filterChain.doFilter(request, response);
+
+    boolean deuCerto = response.getStatus() < 400;
+
+    synchronized (contador) {
+      if (limite.contarSoFalhas && deuCerto) {
+        // Acertou — zera o contador de erros. Erros anteriores dentro da
+        // janela não devem continuar pesando depois de um acerto.
+        contador.tentativas = 0;
+      } else if (!limite.contarSoFalhas || !deuCerto) {
+        contador.tentativas++;
+      }
+    }
   }
 
   private String obterIp(HttpServletRequest request) {

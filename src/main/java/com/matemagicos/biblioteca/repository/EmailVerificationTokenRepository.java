@@ -1,7 +1,8 @@
 package com.matemagicos.biblioteca.repository;
 
-import com.matemagicos.biblioteca.models.EmailVerificationToken;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.matemagicos.biblioteca.models.EmailVerificationToken;
 
 import java.util.Optional;
 

@@ -2,6 +2,7 @@ package com.matemagicos.biblioteca.service;
 
 import com.matemagicos.biblioteca.DTO.DesempenhoRequestDTO;
 import com.matemagicos.biblioteca.DTO.DesempenhoResponseDTO;
+import com.matemagicos.biblioteca.DTO.HistoricoItemDTO;
 import com.matemagicos.biblioteca.models.DesempenhoJogo;
 import com.matemagicos.biblioteca.models.Jogo;
 import com.matemagicos.biblioteca.models.PontuacaoHistorico;
@@ -10,16 +11,20 @@ import com.matemagicos.biblioteca.repository.DesempenhoJogoRepository;
 import com.matemagicos.biblioteca.repository.JogoRepository;
 import com.matemagicos.biblioteca.repository.PontuacaoRepository;
 import com.matemagicos.biblioteca.repository.UsuarioRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class DesempenhoJogoService {
 
-  
-  private static final int PONTOS_POR_ACERTO = 10;
-  private static final int PONTOS_POR_MOEDA = 10; 
+  // Package-private (sem "private") de propósito: reaproveitado por
+  // obterHistorico()
+  // pra recalcular os pontos de partidas antigas sem duplicar o número mágico
+  static final int PONTOS_POR_ACERTO = 10;
+  private static final int PONTOS_POR_MOEDA = 10;
 
   private final DesempenhoJogoRepository desempenhoRepository;
   private final UsuarioRepository usuarioRepository;
@@ -43,7 +48,6 @@ public class DesempenhoJogoService {
     Jogo jogo = jogoRepository.findById(dto.getIdJogo())
         .orElseThrow(() -> new IllegalArgumentException("Jogo não encontrado."));
 
-    
     DesempenhoJogo desempenho = new DesempenhoJogo();
     desempenho.setUsuario(usuario);
     desempenho.setJogo(jogo);
@@ -52,16 +56,13 @@ public class DesempenhoJogoService {
     desempenho.setDataHora(LocalDateTime.now());
     desempenho = desempenhoRepository.save(desempenho);
 
-    
     int pontosGanhos = dto.getAcertosPartida() * PONTOS_POR_ACERTO;
     int moedasGanhas = pontosGanhos / PONTOS_POR_MOEDA;
 
-    
     usuario.setTotalPontos(usuario.getTotalPontos() + pontosGanhos);
     usuario.setMoedasMagicas(usuario.getMoedasMagicas() + moedasGanhas);
     usuarioRepository.save(usuario);
 
-    
     if (pontosGanhos > 0) {
       PontuacaoHistorico historico = new PontuacaoHistorico();
       historico.setUsuario(usuario);
@@ -78,5 +79,31 @@ public class DesempenhoJogoService {
         pontosGanhos,
         usuario.getTotalPontos(),
         usuario.getMoedasMagicas());
+  }
+
+  // Últimas 50 partidas do usuário, mais recente primeiro. Os pontos ganhos não
+  // ficam salvos na própria partida (só em PontuacaoHistorico, sem vínculo direto
+  // com o id da partida) — por isso recalculamos aqui com a mesma constante usada
+  // em registrar(), em vez de duplicar o número em outro lugar.
+  public List<HistoricoItemDTO> obterHistorico(Integer idUsuario) {
+    List<DesempenhoJogo> partidas = desempenhoRepository.findTop50ByUsuario_IdUsuarioOrderByDataHoraDesc(idUsuario);
+
+    return partidas.stream()
+        .map(this::toHistoricoItemDTO)
+        .toList();
+  }
+
+  private HistoricoItemDTO toHistoricoItemDTO(DesempenhoJogo d) {
+    int pontosGanhos = d.getAcertosPartida() * PONTOS_POR_ACERTO;
+
+    return new HistoricoItemDTO(
+        d.getIdDesempenho(),
+        d.getJogo().getIdJogo(),
+        d.getJogo().getNomeFase(),
+        d.getJogo().getTipoOperacao(),
+        d.getAcertosPartida(),
+        d.getTempoGasto(),
+        pontosGanhos,
+        d.getDataHora());
   }
 }

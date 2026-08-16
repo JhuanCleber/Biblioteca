@@ -2,7 +2,6 @@ package com.matemagicos.biblioteca.service;
 
 import com.matemagicos.biblioteca.models.PasswordResetToken;
 import com.matemagicos.biblioteca.repository.PasswordResetTokenRepository;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -55,5 +54,10 @@ public class PasswordResetService {
   public void marcarComoUsado(PasswordResetToken token) {
     token.setUsado(true);
     repository.save(token);
+  }
+
+  // Usado ao excluir a conta
+  public void excluirTodosDoUsuario(Integer idUsuario) {
+    repository.deleteByIdUsuario(idUsuario);
   }
 }

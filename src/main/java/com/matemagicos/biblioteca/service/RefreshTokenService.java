@@ -2,7 +2,6 @@ package com.matemagicos.biblioteca.service;
 
 import com.matemagicos.biblioteca.models.RefreshToken;
 import com.matemagicos.biblioteca.repository.RefreshTokenRepository;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -75,5 +74,11 @@ public class RefreshTokenService {
     List<RefreshToken> tokensAtivos = repository.findAllByIdUsuarioAndRevogadoFalse(idUsuario);
     tokensAtivos.forEach(t -> t.setRevogado(true));
     repository.saveAll(tokensAtivos);
+  }
+
+  // Usado ao excluir a conta — apaga de vez (diferente de revogar, que só marca
+  // como inválido mas mantém o histórico)
+  public void excluirTodosDoUsuario(Integer idUsuario) {
+    repository.deleteByIdUsuario(idUsuario);
   }
 }

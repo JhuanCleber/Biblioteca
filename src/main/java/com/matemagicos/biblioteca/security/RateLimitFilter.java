@@ -11,6 +11,30 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Limita quantas vezes cada IP pode bater numa rota sensível dentro de uma
+ * janela
+ * de tempo — protege contra spam de cadastro, força bruta de login, e spam de
+ * emails (esqueci-senha, verificação). Implementação simples de "janela fixa"
+ * em
+ * memória: reseta quando o app reinicia e não é compartilhada entre instâncias
+ * (não é um problema aqui — o back roda numa instância só).
+ *
+ * IMPORTANTE — sobre "tentativa certa depois de errar": uma vez que o limite é
+ * estourado (ex: 8 erros seguidos em 1min), a PRÓXIMA tentativa fica bloqueada
+ * mesmo que fosse a senha certa, até a janela passar. Isso é intencional e
+ * inerente a qualquer rate limiter de verdade — se uma tentativa correta sempre
+ * pudesse "furar" o bloqueio, o limite não protegeria contra força bruta de
+ * verdade. O que fazemos pra amenizar (o público daqui são crianças, que erram
+ * a própria senha com frequência):
+ * 1. Limites mais generosos que o normal (8 em vez de 5, por exemplo)
+ * 2. contarSoFalhas: só ERROS contam pro limite — uma tentativa CERTA zera o
+ * contador na hora, então erros passados não vão se acumulando à toa ao
+ * longo de uma sessão em que a criança eventualmente acerta.
+ *
+ * Também protege /usuarios/conta (excluir conta), que pede confirmação de
+ * senha e merece a mesma proteção contra tentativa de adivinhação.
+ */
 public class RateLimitFilter extends OncePerRequestFilter {
 
   private static class Limite {
@@ -42,6 +66,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     limitesPorRota.put("/auth/verificar-email", new Limite(10, 900_000, true)); // 10 erradas por 15min
     limitesPorRota.put("/auth/refresh", new Limite(30, 60_000, false)); // 30 por minuto (uso automático)
     limitesPorRota.put("/auth/logout", new Limite(30, 60_000, false)); // 30 por minuto
+    limitesPorRota.put("/usuarios/conta", new Limite(5, 900_000, true)); // 5 senhas erradas por 15min (excluir conta)
   }
 
   @Override

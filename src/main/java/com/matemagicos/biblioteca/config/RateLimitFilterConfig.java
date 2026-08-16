@@ -13,7 +13,7 @@ public class RateLimitFilterConfig {
   public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration() {
     FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>();
     registration.setFilter(new RateLimitFilter());
-    registration.addUrlPatterns("/auth/*");
+    registration.addUrlPatterns("/auth/*", "/usuarios/conta");
     registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
     return registration;
   }

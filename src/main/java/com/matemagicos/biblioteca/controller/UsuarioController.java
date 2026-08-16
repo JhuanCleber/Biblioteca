@@ -1,6 +1,7 @@
 package com.matemagicos.biblioteca.controller;
 
 import com.matemagicos.biblioteca.DTO.EditarPerfilRequestDTO;
+import com.matemagicos.biblioteca.DTO.ExcluirContaRequestDTO;
 import com.matemagicos.biblioteca.DTO.UsuarioDTO;
 import com.matemagicos.biblioteca.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -36,6 +37,22 @@ public class UsuarioController {
                     "ok", true,
                     "mensagem", "Perfil atualizado!",
                     "usuario", usuarioAtualizado));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "ok", false,
+                    "erro", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/conta")
+    public ResponseEntity<?> excluirConta(@Valid @RequestBody ExcluirContaRequestDTO dto,
+            Authentication authentication) {
+        try {
+            Integer idUsuario = (Integer) authentication.getDetails();
+            service.excluirConta(idUsuario, dto.getSenha());
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "mensagem", "Conta excluída com sucesso."));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "ok", false,

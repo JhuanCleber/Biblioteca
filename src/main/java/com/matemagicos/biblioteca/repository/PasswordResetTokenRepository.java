@@ -1,8 +1,7 @@
 package com.matemagicos.biblioteca.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.matemagicos.biblioteca.models.PasswordResetToken;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
@@ -15,4 +14,7 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
   // engano.
   Optional<PasswordResetToken> findTopByIdUsuarioAndCodigoAndUsadoFalseOrderByIdTokenDesc(
       Integer idUsuario, String codigo);
+
+  // Usado ao excluir a conta
+  void deleteByIdUsuario(Integer idUsuario);
 }

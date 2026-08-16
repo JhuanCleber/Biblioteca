@@ -10,10 +10,14 @@ import com.matemagicos.biblioteca.models.EmailVerificationToken;
 import com.matemagicos.biblioteca.models.PasswordResetToken;
 import com.matemagicos.biblioteca.models.RefreshToken;
 import com.matemagicos.biblioteca.models.Usuario;
+import com.matemagicos.biblioteca.repository.AvaliacaoFinalRepository;
+import com.matemagicos.biblioteca.repository.DesempenhoJogoRepository;
+import com.matemagicos.biblioteca.repository.PontuacaoRepository;
 import com.matemagicos.biblioteca.repository.UsuarioRepository;
 import com.matemagicos.biblioteca.security.JwtService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,11 +34,15 @@ public class UsuarioService {
     private final EmailVerificationService emailVerificationService;
     private final EmailService emailService;
     private final FiltroDeNomeService filtroDeNomeService;
+    private final DesempenhoJogoRepository desempenhoJogoRepository;
+    private final AvaliacaoFinalRepository avaliacaoFinalRepository;
+    private final PontuacaoRepository pontuacaoRepository;
 
     public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder, JwtService jwtService,
             RefreshTokenService refreshTokenService, PasswordResetService passwordResetService,
             EmailVerificationService emailVerificationService, EmailService emailService,
-            FiltroDeNomeService filtroDeNomeService) {
+            FiltroDeNomeService filtroDeNomeService, DesempenhoJogoRepository desempenhoJogoRepository,
+            AvaliacaoFinalRepository avaliacaoFinalRepository, PontuacaoRepository pontuacaoRepository) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -43,6 +51,9 @@ public class UsuarioService {
         this.emailVerificationService = emailVerificationService;
         this.emailService = emailService;
         this.filtroDeNomeService = filtroDeNomeService;
+        this.desempenhoJogoRepository = desempenhoJogoRepository;
+        this.avaliacaoFinalRepository = avaliacaoFinalRepository;
+        this.pontuacaoRepository = pontuacaoRepository;
     }
 
     public List<UsuarioDTO> listar() {
@@ -208,6 +219,32 @@ public class UsuarioService {
         Usuario salvo = repository.save(u);
 
         return toDTO(salvo);
+    }
+
+    // Apaga a conta e tudo que depende dela. @Transactional garante que, se
+    // qualquer passo falhar no meio, NADA é apagado (tudo ou nada) — evita
+    // deixar o banco com dado "órfão" pela metade.
+    //
+    // Ordem importa: apaga primeiro tudo que referencia o usuário via chave
+    // estrangeira, e só por último o usuário em si — senão o banco recusa a
+    // exclusão (violação de FK).
+    @Transactional
+    public void excluirConta(Integer idUsuario, String senha) {
+        Usuario u = repository.findById(idUsuario)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado."));
+
+        if (!passwordEncoder.matches(senha, u.getSenha())) {
+            throw new IllegalArgumentException("Senha incorreta.");
+        }
+
+        desempenhoJogoRepository.deleteByUsuario_IdUsuario(idUsuario);
+        avaliacaoFinalRepository.deleteByUsuario_IdUsuario(idUsuario);
+        pontuacaoRepository.deleteByUsuario_IdUsuario(idUsuario);
+        refreshTokenService.excluirTodosDoUsuario(idUsuario);
+        passwordResetService.excluirTodosDoUsuario(idUsuario);
+        emailVerificationService.excluirTodosDoUsuario(idUsuario);
+
+        repository.delete(u);
     }
 
     private UsuarioDTO toDTO(Usuario u) {
